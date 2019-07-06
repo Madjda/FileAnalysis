@@ -1,0 +1,270 @@
+PARSER_BEGIN(analyse)
+import java.io.*;
+
+public class analyse {
+
+  static public File out = new File("component.gui");
+  static public FileOutputStream OutStream ;
+  static public BufferedWriter buf ;
+  static public Data data ;
+  static public Handling h;
+  
+
+   static void analyze(File file ) throws ParseException {
+     data = new Data () ;
+     h= new Handling(data) ;
+    
+     //////
+     Automata glob = new Automata (0) ;
+    
+     //////
+       try
+      {
+        OutStream = new FileOutputStream(out);
+        buf = new BufferedWriter(new OutputStreamWriter(OutStream));
+       analyse  parser = new analyse(new InputStreamReader (new FileInputStream(file)));
+        parser.Axiome();
+      }
+      catch (Exception e) {
+      e.printStackTrace();
+    }
+    
+     
+     
+      //////////////////// Display types hashMap Content
+       h.displayVariables( data.getListVar());
+       System.out.println("It works !");
+       ////////////////// Display actions hashMap Content
+       h.displayActions( data.getListAct());
+       
+       //////////////// display actions array
+       int i;
+       System.out.println("display actions array");
+		   h.displayFileContent(data.getVectAction());
+        System.out.println();
+         h.generateGlobalAutom();
+
+         // After the treatment 
+         h.displayFileContent(data.getVectAction());
+        System.out.println();
+
+        //////////////
+         glob =  data.getPartaef().get(data.getBlockNum()-1);
+
+         System.out.println(glob.getFinalState());
+         SaveAef sAef= new SaveAef() ;
+         System.out.println("CreationDone");
+         try
+         {
+           
+       sAef.saveAutomata(glob) ;
+       System.out.println("Saved.");
+   
+         }
+         catch (Exception e) {
+         e.printStackTrace();
+       }
+  }
+}
+
+
+
+PARSER_END(analyse)
+
+SKIP :
+{
+<
+ " " | "\t" | "\n" | "\r"
+>
+}
+
+TOKEN :
+ {
+   <DEBUT : "DEBUT"> 
+   |<FIN : "FIN"> 
+   |<COMPOSANT : 
+      "Fenêtre" 
+      |"boite Dialogue" 
+      |"panel"
+      |"Bouton"
+      |"Champs Texte"
+      |"Combo Box"
+      |"Liste Déroulante"
+      |"case A cochet"
+      |"Bouton Radio" 
+      |"Icône"
+      | "Caneva"> 
+   |<ENUM : "Ferm" | "Agrd" | "Red">
+   |<ACTION:    
+      "Click" |"DbClick" |"ChrKeyPress" 
+      |"EntrerKeyPress" |"Drag" |"Drop" 
+      |"ClickBtRed"| "ClickBtFerm"
+      |"ClickBtArg"| "ClickTitre"| "EnterPress"> 
+   |<INTERFACE : "INTERFACE"> 
+   |<INITIALISATION : "INITIALISATION"> 
+   |<HeaderACT : "ACTIONS"> 
+   |< EVT : "EVT"> 
+   |<COMP : "COMP"> 
+   |<PROP : "PROP"> 
+   |<#plus: "+" >
+   |<#choix : "~"> 
+   |<pointVirgule: ";">
+   |<operation: < plus> | < choix> >
+   |<AFF : ":="> 
+   |<ptr : "::"> 
+   |<egale: "="> 
+   |<paro: "("> 
+   |<parf: ")"> 
+   |<acldo: "{"> 
+   |<acldf: "}"> 
+   |<Dpoint : ":"> 
+   |<virgule : ","> 
+   |<et:"and"> 
+   |<ou:"or"> 
+   |<si :"if"> 
+   |<alors: "then"> 
+   |<cote: "'">
+   |<DIFF: "<>">
+   |<VRAI:"True">
+   |<FAUX:"False">
+   |<END: "#">  
+   |<TYPE:"bool" | "int" | <acldo> (<ID>(<virgule> <ID> )*) <acldf> > 
+   |<ALPHANUM: ((["a"-"z"] | ["A"-"Z"])+ (["0"-"9"])+(["a"-"z"] | ["A"-"Z"])+ )+> 
+   |<ID: ["A"-"Z"](["a"-"z"] | ["A"-"Z"])*> 
+   |<VALEUR: (["0"-"9"])+>
+   
+   
+          
+ }
+ ///////////////////////////////////////////////////// Syntaxique //////////////////////////////////////////////////////////////////
+
+ 
+ //Z 
+void Axiome() :
+{} 
+{
+  <DEBUT> <INTERFACE> Declaration() <FIN><EOF>
+}
+/////////////////// INTERFACE ////////////////////////////////////////
+void Declaration():
+{ Token t;
+} 
+{
+  try   
+   {
+  <COMP> t=<ID>
+  { buf.write(t.toString());     /// generating the  file of components
+    buf.write(" { ");
+    buf.newLine();
+    buf.write("Type du composant : "); }
+  ":" t=<COMPOSANT> 
+  { buf.write(t.toString()); }
+  ("(" t=<ID>
+  { buf.newLine();
+    buf.write("propriétaire : ");
+    buf.write(t.toString()); } 
+    ")")? 
+  { buf.newLine(); }
+   <PROP> 
+  { buf.write("Propriétés : ") ;
+    buf.newLine();}
+   Prop() Declaration() | Init()
+  
+  }
+   catch (IOException e) {
+      e.printStackTrace();
+    }
+}
+void Prop() : 
+{
+  Token t ;
+  Token v ;
+  Token w ;
+  
+} 
+{
+  try {
+  (v=<ID>
+  { buf.write("    "+v.toString());
+    buf.write(":"); }
+   ":" t=<TYPE>
+  { buf.write(t.toString());
+    buf.newLine(); } 
+  <pointVirgule> )+
+  <EVT> 
+  { buf.write("Evènement : ");
+    buf.newLine(); } 
+  (w=<ACTION> 
+  { buf.write("   "+w.toString());
+    buf.newLine(); }  
+  condition())+
+  { buf.write(" } ");
+    buf.newLine(); }
+  {h.addVar(v.image,t.image);}  // Saving the variable with its type in the vector 
+  }
+   catch (IOException e) {
+      e.printStackTrace();
+    }
+}
+void condition() : 
+{} 
+{
+<acldo> <si> <ID> (<egale> | <DIFF>) (<ENUM> | <VALEUR> | <ALPHANUM> | <VRAI> |<FAUX>) <alors> (operation() (<pointVirgule>)?)+ <acldf>
+}
+void operation() : 
+{} 
+{
+  <ID> <AFF> (<ALPHANUM> | <VALEUR>| <VRAI> |<FAUX>)
+}
+
+
+/////////////////////////////////////////////////////////////////////
+
+/////////////////// INITIALISATION ///////////////////////////////
+void Init():
+{}
+{
+  try {
+  <INITIALISATION> { buf.close(); } E1()
+    }catch (IOException e) {
+      e.printStackTrace();
+    }
+}
+
+void E1() :
+{}
+{
+<ID> <ptr> <ID> <AFF> ( <ALPHANUM> |<VALEUR>| <VRAI> |<FAUX>) <pointVirgule> E1() |S()
+}
+
+
+/////////////////////////////////////////////////////////////////
+
+//////////////// ACTIONS ////////////////////////////////////////
+
+void S() :
+{}
+{
+ <HeaderACT> E() A()
+}
+
+// E
+void E() :
+{
+  Token op,act,id;
+}
+{
+act=<ACTION> <paro> id=<ID>{data.getVectAction().add(Integer.toString(data.getCpt()));h.addAct(data.getCpt(),act.image+"("+id.image+")");data.setCpt( data.getCpt()+1);} <parf> A() 
+| <acldo>{data.getVectAction().add("{");} E()  <acldf>{data.getVectAction().add("}");}A()
+}
+ 
+// A
+void A() :
+{
+  Token op,act,id;
+}
+{
+op=<pointVirgule>{data.getVectAction().add(op.image);} E() 
+| op=<operation>{data.getVectAction().add(op.image);} E() 
+| {}
+} 

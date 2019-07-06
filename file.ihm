@@ -1,0 +1,26 @@
+DEBUT
+INTERFACE
+COMP Id : panel (Aa)
+PROP 
+Position : {Ha,Ba,Sq} ;
+Visible : int ;
+EVT
+Click {if Position = Ferm then Position:=500}
+Click {if Position = 10 then Visible:=500 ; Position:=500}
+COMP Id : Bouton
+PROP 
+Xpos : bool ;
+EVT
+Click {if Position <> 10 then Visible:=Tr11ue ; Visible:=True}
+INITIALISATION
+FenP::Option:=10;
+FenA::CV:=11;
+ACTIONS
+
+	
+	Click(Qs)+Drag(B);{Click(Qs);Click(Qs)~Click(Qs)+{Click(Qs);Click(Qs)~{Click(Qs)+Click(Qs)}}};
+{Click(Qs);Click(Qs)~{Click(Qs)+Click(Qs)}}
+	
+
+
+FIN

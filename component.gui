@@ -1,0 +1,42 @@
+FenP { 
+Type du composant : panel
+Propriétés : 
+    Position:{Agrd,Red,Ferm}
+    Visible:bool
+    Xpos:    Ypos:int
+Evènement : 
+   ClickBtFerm
+   ClickBtArg
+   ClickBtRed
+   Click
+ } 
+MenuH { 
+Type du composant : Menu
+propriétaire : FenP
+Propriétés : 
+    ItemChoisi:{Fichier,Commande,Information}
+    Actif:    Visible:bool
+Evènement : 
+   Click
+ } 
+Commande { 
+Type du composant : Menu
+propriétaire : MenuH
+Propriétés : 
+    Option:{Projection,Distance}
+    Deployer:bool
+Evènement : 
+   Click
+   EnterPress
+ } 
+Plan { 
+Type du composant : Caneva
+propriétaire : FenP
+Propriétés : 
+    NbreObjet:int
+    ListObjet:{Aucun,Cercle,Point,Segment,Rectangle}
+    Actif:bool
+Evènement : 
+   Click
+   Drag
+ } 
